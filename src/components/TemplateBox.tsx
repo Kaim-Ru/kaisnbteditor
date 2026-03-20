@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { getPreviewImage } from './ChestPreview'
 import * as NBT from 'nbtify'
 import trashcanIcon from '../assets/trashcan.svg'
@@ -15,23 +16,54 @@ export default function TemplateBox({
   onTemplateDelete,
   customImages = {},
 }: TemplateBoxProps) {
+  const [currentPage, setCurrentPage] = useState(0)
+  const itemsPerPage = 8
+  const maxPage = Math.max(0, Math.ceil(templates.length / itemsPerPage) - 1)
+
+  useEffect(() => {
+    if (currentPage > maxPage) {
+      setCurrentPage(maxPage)
+    }
+  }, [maxPage, currentPage])
+
+  const handlePrevPage = () => {
+    setCurrentPage((prev) => Math.max(0, prev - 1))
+  }
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(maxPage, prev + 1))
+  }
+
   return (
     <div className="w-full h-20 md:h-[20%] bg-type-1 flex flex-col min-h-22 md:min-h-28">
       <div className="relative flex items-center justify-center w-full h-8">
-        <div className="absolute text-[20px] left-1 top-1 bg-type-1-button">
+        <button
+          className={`absolute text-[20px] left-1 top-1 ${currentPage === 0 ? 'bg-type-1-button-disabled' : 'bg-type-1-button'}`}
+          onClick={handlePrevPage}
+          disabled={currentPage === 0}
+        >
           ◀
-        </div>
+        </button>
         <div className="text-[20px] md:text-[24px] relative top-1">
-          Templates
+          Templates{' '}
+          <span className="text-[14px]">
+            {templates.length > itemsPerPage &&
+              `(${currentPage + 1}/${maxPage + 1})`}
+          </span>
         </div>
-        <div className="absolute text-[20px] right-1 top-1 bg-type-1-button">
+        <button
+          className={`absolute text-[20px] right-1 top-1 ${currentPage >= maxPage ? 'bg-type-1-button-disabled' : 'bg-type-1-button'}`}
+          onClick={handleNextPage}
+          disabled={currentPage >= maxPage}
+        >
           ▶
-        </div>
+        </button>
       </div>
       <div className="z-10 flex-1">
         <div className="grid grid-cols-8 w-full h-full gap-0.5 md:gap-1">
-          {Array.from({ length: 8 }).map((_, i) => {
-            const template = templates[i]
+          {Array.from({ length: itemsPerPage }).map((_, i) => {
+            const actualIndex = currentPage * itemsPerPage + i
+            const template = templates[actualIndex]
             let previewItem = null
 
             if (template) {
@@ -44,7 +76,7 @@ export default function TemplateBox({
             }
 
             return (
-              <div key={i} className="p-1">
+              <div key={actualIndex} className="p-1">
                 <div
                   className={`flex items-center justify-center w-full h-full relative group ${template ? 'cursor-pointer hover:opacity-80' : ''}`}
                   onClick={() =>
@@ -67,7 +99,7 @@ export default function TemplateBox({
                           onClick={(e) => {
                             e.stopPropagation()
                             if (onTemplateDelete) {
-                              onTemplateDelete(i)
+                              onTemplateDelete(actualIndex)
                             }
                           }}
                           title="delete"

@@ -27,6 +27,9 @@ html {
 .bg-type-1-button {
   @apply text-primary-300 bg-primary-600 border border-primary-400 shadow-[0px_7px_0px_rgba(56,29,56,1.0)] hover:bg-primary-500 hover:border-primary-300 hover:text-primary-200 active:shadow-none active:translate-y-1.75;
 }
+.bg-type-1-button-disabled {
+  @apply opacity-50 text-primary-300 bg-primary-600 border border-primary-400 shadow-[0px_7px_0px_rgba(56,29,56,1.0)];
+}
 .bg-type-2 {
   @apply bg-primary-400 border border-primary-300 shadow-[0px_-4px_0px_8px_rgba(0,0,0,0.07)_inset];
 }
