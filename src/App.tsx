@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import logo from './assets/logo.svg'
 import ChestPreview from './components/ChestPreview'
 import TemplateBox from './components/TemplateBox'
@@ -7,15 +7,66 @@ import {
   mcstructureToSNBT,
   snbtToMcstructure,
   extractItemFromSNBT,
+  extractAllItemsFromSNBT,
   updateItemInSNBT,
 } from './utils/nbt-converter'
 
+const DEFAULT_SNBT = `{
+    format_version: 1,
+    size: [
+        1,
+        1,
+        1
+    ],
+    structure: {
+        block_indices: [
+            [0],
+            [-1]
+        ],
+        entities: [],
+        palette: {
+            default: {
+                block_palette: [
+                    {
+                        name: "minecraft:chest",
+                        states: {
+                            "minecraft:cardinal_direction": "east"
+                        },
+                        version: 18168865
+                    }
+                ],
+                block_position_data: {
+                    0: {
+                        block_entity_data: {
+                            Findable: 0b,
+                            Items: [
+                            ],
+                            id: "Chest"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    structure_world_origin: [
+        -2,
+        -59,
+        5
+    ]
+}`
+
 function App() {
-  const [snbtContent, setSnbtContent] = useState('')
-  const [fileName, setFileName] = useState('structure')
+  const [snbtContent, setSnbtContent] = useState(DEFAULT_SNBT)
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
   const [currentItemSnbt, setCurrentItemSnbt] = useState('')
+  const [items, setItems] = useState<Record<number, any>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // snbtContentが変更されたときにアイテムデータを更新
+  useEffect(() => {
+    const itemMap = extractAllItemsFromSNBT(snbtContent)
+    setItems(itemMap)
+  }, [snbtContent])
 
   // ファイル選択時の処理
   const handleFileChange = async (
@@ -25,8 +76,6 @@ function App() {
     if (!file) return
 
     try {
-      setFileName(file.name.replace(/\.(mcstructure|nbt)$/i, ''))
-
       const snbt = await mcstructureToSNBT(file)
       setSnbtContent(snbt)
     } catch (error) {
@@ -64,7 +113,7 @@ function App() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `${fileName}.mcstructure`
+      a.download = `${crypto.randomUUID()}.mcstructure`
       a.click()
       URL.revokeObjectURL(url)
     } catch (error) {
@@ -130,6 +179,7 @@ function App() {
             <ChestPreview
               onSlotSelect={handleSlotSelect}
               selectedSlot={selectedSlot}
+              items={items}
             />
             <div className="w-full h-[30%] md:h-[16%] flex justify-between pt-2">
               <div

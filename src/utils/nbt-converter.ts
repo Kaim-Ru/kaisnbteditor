@@ -187,6 +187,40 @@ export function extractItemFromSNBT(
 }
 
 /**
+ * mcstructure SNBTからすべてのアイテムを抽出
+ * @param snbtText mcstructure全体のSNBT文字列
+ * @returns スロット番号をキー、アイテムデータを値とするオブジェクト
+ */
+export function extractAllItemsFromSNBT(
+  snbtText: string
+): Record<number, any> {
+  try {
+    const nbtData = NBT.parse(snbtText) as McstructureNBT
+    const data = nbtData.data || nbtData
+
+    const blockPositionData = data.structure.palette.default.block_position_data
+    const firstKey = Object.keys(blockPositionData)[0]
+    const items = blockPositionData[firstKey].block_entity_data.Items
+
+    const itemMap: Record<number, any> = {}
+    
+    if (Array.isArray(items)) {
+      items.forEach((item: any) => {
+        const slot = item.Slot?.valueOf()
+        if (typeof slot === 'number') {
+          itemMap[slot] = item
+        }
+      })
+    }
+
+    return itemMap
+  } catch (error) {
+    console.error('Extract all items error:', error)
+    return {}
+  }
+}
+
+/**
  * mcstructure SNBTの指定スロットのアイテムを更新
  * @param snbtText mcstructure全体のSNBT文字列
  * @param slotNumber スロット番号（0-26）
