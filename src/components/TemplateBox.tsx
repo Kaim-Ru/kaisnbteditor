@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { getPreviewImage } from './ChestPreview'
 import * as NBT from 'nbtify'
 import trashcanIcon from '../assets/trashcan.svg'
+import exportIcon from '../assets/export.svg'
 
 interface TemplateBoxProps {
   templates?: string[]
@@ -94,6 +95,19 @@ export default function TemplateBox({
                           alt="template preview"
                           className="absolute inset-0 w-full h-full p-1 pointer-events-none"
                         />
+                        <button
+                          className="absolute left-0 bottom-0 items-center justify-center w-[50%] h-[50%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bg-blue-300 border border-blue-300 hover:bg-blue-300 opacity-50 group-hover:opacity-100"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                          }}
+                          title="export"
+                        >
+                          <img
+                            src={exportIcon}
+                            alt="export"
+                            className="w-full h-full pointer-events-none"
+                          />
+                        </button>
                         <button
                           className="absolute right-0 items-center justify-center w-[50%] h-[50%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bottom-0 bg-red-300 border border-red-300 hover:bg-red-300 opacity-50 group-hover:opacity-100"
                           onClick={(e) => {
