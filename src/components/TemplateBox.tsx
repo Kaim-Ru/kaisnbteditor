@@ -1,0 +1,21 @@
+export default function TemplateBox() {
+  return (
+    <div className="w-full h-20 md:h-[20%] bg-type-1 flex flex-col min-h-22 md:min-h-28">
+      <div className="text-[20px] md:text-[24px] mx-auto">Templates</div>
+      <div className="flex-1">
+        <div className="grid grid-cols-8 w-full h-full gap-0.5 md:gap-1">
+          {/* <div className="h-full p-1 aspect-square">s
+            <div className="w-full h-full bg-gray-500"></div>
+          </div> */}
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="p-1">
+              <div className="flex items-center justify-center w-full h-full">
+                <div className="aspect-square w-[min(100%,100vh)] bg-type-2-hover max-w-12 md:max-w-none"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

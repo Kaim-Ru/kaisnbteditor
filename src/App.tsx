@@ -1,6 +1,8 @@
 import './App.css'
 import logo from './assets/logo.svg'
 import ChestPreview from './components/ChestPreview'
+import TemplateBox from './components/TemplateBox'
+import NBTEditor from './components/NBTEditor'
 
 function App() {
   return (
@@ -15,22 +17,22 @@ function App() {
           <span className="text-[1.7rem]">NBTE</span>ditor
         </span>
       </header>
-      <main className="flex items-center justify-center w-full h-[calc(100vh-40px)] bg-primary-800">
+      <main className="flex items-center justify-center w-full h-[calc(100vh-40px)] bg-primary-800 font-bai-jamjuree text-primary-300">
         <div className="w-[95%] h-[90%] md:w-[85%] md:h-[80%] flex items-center justify-start md:justify-center gap-3 md:gap-10 flex-col md:flex-row">
           <div className="h-full w-[90%] md:w-[50%] flex flex-col justify-between">
             <ChestPreview />
             <div className="w-full h-[30%] md:h-[16%] flex justify-between pt-2">
               <div className="w-[48%] h-full bg-type-1-button flex items-center justify-center">
-                <span className="text-3xl font-bai-jamjuree">Import</span>
+                <span className="text-3xl">Import</span>
               </div>
               <div className="w-[48%] h-full bg-type-1-button flex items-center justify-center">
-                <span className="text-3xl font-bai-jamjuree">Export</span>
+                <span className="text-3xl">Export</span>
               </div>
             </div>
           </div>
           <div className="md:h-full w-[90%] md:w-[50%] flex flex-col justify-start md:justify-between">
-            <div className="w-full h-20 md:h-[20%] bg-type-1"></div>
-            <div className="w-full h-100 md:h-[75%] bg-type-1 my-4 md:my-0"></div>
+            <TemplateBox />
+            <NBTEditor />
           </div>
         </div>
       </main>
