@@ -232,21 +232,21 @@ export function updateItemInSNBT(
   itemSnbt: string
 ): string {
   console.log('updateItemInSNBT called:', { slotNumber, itemSnbt })
-  
+
   const nbtData = NBT.parse(snbtText) as McstructureNBT
-  
+
   // nbtifyで直接パースする
   const itemData = NBT.parse(itemSnbt)
-  
+
   console.log('Parsed itemData:', itemData)
-  
+
   // Slotプロパティが正しく設定されていることを確認
   if (!itemData.Slot || itemData.Slot.valueOf() !== slotNumber) {
     itemData.Slot = new NBT.Int8(slotNumber)
   }
-  
+
   console.log('itemData after Slot assignment:', itemData)
-  
+
   // NBT.parseは通常のオブジェクトを返すので、.dataは不要
   const data = nbtData.data || nbtData
 
@@ -265,7 +265,7 @@ export function updateItemInSNBT(
   } else {
     items.push(itemData)
   }
-  
+
   console.log('Items after update:', items)
 
   // SNBTに変換して返す
