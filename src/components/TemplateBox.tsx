@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getPreviewImage } from './ChestPreview'
 import * as NBT from 'nbtify'
+import JSZip from 'jszip'
 import trashcanIcon from '../assets/trashcan.svg'
 import exportIcon from '../assets/export.svg'
 
@@ -33,6 +34,62 @@ export default function TemplateBox({
 
   const handleNextPage = () => {
     setCurrentPage((prev) => Math.min(maxPage, prev + 1))
+  }
+
+  const handleExport = async (
+    template: string,
+    item: any,
+    imageUrl: string
+  ) => {
+    try {
+      const zip = new JSZip()
+      zip.file('item.snbt', template)
+
+      if (imageUrl) {
+        try {
+          const resp = await fetch(imageUrl)
+          const blob = await resp.blob()
+          let ext = 'png'
+          if (blob.type === 'image/svg+xml' || imageUrl.endsWith('.svg'))
+            ext = 'svg'
+          else if (
+            blob.type === 'image/jpeg' ||
+            imageUrl.endsWith('.jpg') ||
+            imageUrl.endsWith('.jpeg')
+          )
+            ext = 'jpg'
+          else if (blob.type === 'image/webp' || imageUrl.endsWith('.webp'))
+            ext = 'webp'
+          zip.file(`image.${ext}`, blob)
+        } catch (e) {
+          console.error('Failed to fetch image for export:', e)
+        }
+      }
+
+      const content = await zip.generateAsync({
+        type: 'blob',
+        compression: 'STORE', // 無圧縮
+      })
+
+      const itemName = item?.Name?.valueOf?.() || item?.Name || 'template'
+      const safeName =
+        typeof itemName === 'string'
+          ? itemName.replace(
+              /[^a-zA-Z0-9_\-\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]/g,
+              '_'
+            )
+          : 'template'
+
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(content)
+      a.download = `${safeName}.knezip`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(a.href)
+    } catch (e) {
+      console.error('Failed to export:', e)
+    }
   }
 
   return (
@@ -96,9 +153,14 @@ export default function TemplateBox({
                           className="absolute inset-0 w-full h-full p-1 pointer-events-none"
                         />
                         <button
-                          className="absolute left-0 bottom-0 items-center justify-center w-[50%] h-[50%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bg-blue-300 border border-blue-300 hover:bg-blue-300 opacity-50 group-hover:opacity-100"
+                          className="absolute left-0 bottom-0 items-center justify-center w-[45%] h-[45%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bg-blue-300 border border-blue-300 hover:bg-blue-300 opacity-40 z-10 group-hover:opacity-100"
                           onClick={(e) => {
                             e.stopPropagation()
+                            handleExport(
+                              template,
+                              previewItem,
+                              getPreviewImage(previewItem, customImages)
+                            )
                           }}
                           title="export"
                         >
@@ -109,7 +171,7 @@ export default function TemplateBox({
                           />
                         </button>
                         <button
-                          className="absolute right-0 items-center justify-center w-[50%] h-[50%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bottom-0 bg-red-300 border border-red-300 hover:bg-red-300 opacity-50 group-hover:opacity-100"
+                          className="absolute right-0 items-center justify-center w-[45%] h-[45%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bottom-0 bg-red-300 border border-red-300 hover:bg-red-300 opacity-40 group-hover:opacity-100"
                           onClick={(e) => {
                             e.stopPropagation()
                             if (onTemplateDelete) {

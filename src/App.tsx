@@ -62,8 +62,13 @@ function App() {
   const [items, setItems] = useState<Record<number, any>>({})
   const [templates, setTemplates] = useState<string[]>([])
   const [customImages, setCustomImages] = useState<Record<string, string>>({})
+  const customImagesRef = useRef<Record<string, string>>(customImages)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const iconInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    customImagesRef.current = customImages
+  }, [customImages])
 
   // snbtContentが変更されたときにアイテムデータを更新
   useEffect(() => {
@@ -105,11 +110,16 @@ function App() {
     if (!file || selectedSlot === null) return
 
     const item = items[selectedSlot]
-    const name = item?.Name?.valueOf?.() || item?.Name || ''
-    if (!name) return
+    const key =
+      item?.kne_id?.valueOf?.() ||
+      item?.kne_id ||
+      item?.Name?.valueOf?.() ||
+      item?.Name ||
+      ''
+    if (!key) return
 
     const url = URL.createObjectURL(file)
-    setCustomImages((prev) => ({ ...prev, [name]: url }))
+    setCustomImages((prev) => ({ ...prev, [key]: url }))
 
     if (iconInputRef.current) {
       iconInputRef.current.value = ''
@@ -188,6 +198,104 @@ function App() {
   const handleDeleteTemplate = (index: number) => {
     setTemplates(templates.filter((_, i) => i !== index))
   }
+
+  // ドラッグ＆ドロップでの機能追加 (.knezip)
+  useEffect(() => {
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault()
+    }
+
+    const handleDrop = async (e: DragEvent) => {
+      e.preventDefault()
+      const files = e.dataTransfer?.files
+      if (!files) return
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        if (file.name.endsWith('.knezip')) {
+          try {
+            const JSZip = (await import('jszip')).default
+            const zip = await JSZip.loadAsync(file)
+
+            // snbtを検索
+            let snbtContentTemp = ''
+            const snbtFile = zip.file('item.snbt')
+            if (snbtFile) {
+              snbtContentTemp = await snbtFile.async('string')
+            }
+
+            // 画像を検索
+            const imgFile =
+              zip.file(/image\.(png|svg|jpg|jpeg|webp)$/i)[0] ||
+              zip.file(/.+\.(png|svg|jpg|jpeg|webp)$/i)[0]
+
+            if (snbtContentTemp) {
+              let baseId = file.name.replace(/\.knezip$/i, '')
+              let finalId = baseId
+
+              // 被りチェック
+              let counter = 1
+              while (customImagesRef.current[finalId]) {
+                finalId = `${baseId}_${counter}`
+                counter++
+              }
+
+              // SNBT に kne_id を埋め込む
+              try {
+                const NBT = await import('nbtify')
+                const parsed = NBT.parse(snbtContentTemp)
+                if (typeof parsed === 'object' && parsed !== null) {
+                  // @ts-ignore
+                  parsed.kne_id = finalId
+                  snbtContentTemp = NBT.stringify(parsed)
+                }
+              } catch (err) {
+                console.error('Failed to inject kne_id', err)
+              }
+
+              setTemplates((prev) => [...prev, snbtContentTemp])
+
+              if (imgFile) {
+                try {
+                  const uint8Array = await imgFile.async('uint8array')
+                  let mimeType = 'image/png'
+                  const lowerName = imgFile.name.toLowerCase()
+                  if (lowerName.endsWith('.svg')) mimeType = 'image/svg+xml'
+                  else if (
+                    lowerName.endsWith('.jpg') ||
+                    lowerName.endsWith('.jpeg')
+                  )
+                    mimeType = 'image/jpeg'
+                  else if (lowerName.endsWith('.webp')) mimeType = 'image/webp'
+
+                  const blob = new Blob([new Uint8Array(uint8Array)], {
+                    type: mimeType,
+                  })
+                  const url = URL.createObjectURL(blob)
+                  setCustomImages((prev) => {
+                    const next = { ...prev, [finalId]: url }
+                    customImagesRef.current = next
+                    return next
+                  })
+                } catch (err) {
+                  console.error('Failed to parse dropped template image', err)
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Failed to load .kne.zip:', err)
+          }
+        }
+      }
+    }
+
+    window.addEventListener('dragover', handleDragOver)
+    window.addEventListener('drop', handleDrop)
+    return () => {
+      window.removeEventListener('dragover', handleDragOver)
+      window.removeEventListener('drop', handleDrop)
+    }
+  }, [])
 
   return (
     <>

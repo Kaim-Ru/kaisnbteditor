@@ -23,6 +23,8 @@
     "@codemirror/view": "^6.40.0",
     "@ironm00n/nbt-ts": "^1.4.1",
     "@lezer/highlight": "^1.2.3",
+    "@types/jszip": "^3.4.0",
+    "jszip": "^3.10.1",
     "nbtify": "^2.2.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
