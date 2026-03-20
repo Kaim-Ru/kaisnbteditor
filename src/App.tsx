@@ -3,17 +3,19 @@ import logo from './assets/logo.svg'
 import ChestPreview from './components/ChestPreview'
 import TemplateBox from './components/TemplateBox'
 import NBTEditor from './components/NBTEditor'
-import { mcstructureToSNBT, snbtToMcstructure } from './utils/nbt-converter'
+import {
+  mcstructureToSNBT,
+  snbtToMcstructure,
+  extractItemFromSNBT,
+  updateItemInSNBT,
+} from './utils/nbt-converter'
 
 function App() {
   const [snbtContent, setSnbtContent] = useState('')
   const [fileName, setFileName] = useState('structure')
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
+  const [currentItemSnbt, setCurrentItemSnbt] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // Importボタンのクリック処理
-  const handleImportClick = () => {
-    fileInputRef.current?.click()
-  }
 
   // ファイル選択時の処理
   const handleFileChange = async (
@@ -23,10 +25,8 @@ function App() {
     if (!file) return
 
     try {
-      // ファイル名を保存（拡張子なし）
       setFileName(file.name.replace(/\.(mcstructure|nbt)$/i, ''))
 
-      // mcstructureをSNBTに変換
       const snbt = await mcstructureToSNBT(file)
       setSnbtContent(snbt)
     } catch (error) {
@@ -36,10 +36,15 @@ function App() {
       )
     }
 
-    // input要素をリセット（同じファイルを再度選択できるようにする）
+    //初期化
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
+  }
+
+  // Importボタンのクリック処理
+  const handleImportClick = () => {
+    fileInputRef.current?.click()
   }
 
   // Exportボタンのクリック処理
@@ -50,10 +55,9 @@ function App() {
     }
 
     try {
-      // SNBTをmcstructureに変換
       const uint8Array = await snbtToMcstructure(snbtContent)
 
-      // ダウンロード
+      //download
       const blob = new Blob([new Uint8Array(uint8Array)], {
         type: 'application/octet-stream',
       })
@@ -71,6 +75,39 @@ function App() {
     }
   }
 
+  // スロット選択時の処理
+  const handleSlotSelect = (slot: number) => {
+    setSelectedSlot(slot)
+
+    if (!snbtContent.trim()) {
+      setCurrentItemSnbt('')
+      return
+    }
+
+    const itemSnbt = extractItemFromSNBT(snbtContent, slot)
+    setCurrentItemSnbt(itemSnbt || '')
+  }
+
+  // アイテム編集時の処理
+  const handleItemChange = (newItemSnbt: string) => {
+    setCurrentItemSnbt(newItemSnbt)
+
+    if (!newItemSnbt.trim() || selectedSlot === null || !snbtContent.trim()) {
+      return
+    }
+
+    try {
+      const updatedSnbt = updateItemInSNBT(
+        snbtContent,
+        selectedSlot,
+        newItemSnbt
+      )
+      setSnbtContent(updatedSnbt)
+    } catch (error) {
+      console.error('Update item error:', error)
+    }
+  }
+
   return (
     <>
       <input
@@ -80,9 +117,6 @@ function App() {
         style={{ display: 'none' }}
         onChange={handleFileChange}
       />
-      {/* <p className="text-2xl font-bai-jamjuree text-primary-100">aaa</p>
-      <div className="w-30 h-30 bg-type-1"></div>
-      <div className="w-30 h-30 bg-type-2"></div> */}
       <header className="flex items-center justify-start flex-none w-full h-10 bg-type-1">
         <img src={logo} alt="Logo" className="inline w-8 mx-1" />
         <span className="-mb-1 text-[1.6rem] font-bai-jamjuree text-primary-300">
@@ -93,25 +127,28 @@ function App() {
       <main className="flex items-center justify-center w-full h-[calc(100vh-40px)] bg-primary-800 font-bai-jamjuree text-primary-300">
         <div className="w-[95%] h-[90%] md:w-[85%] md:h-[80%] flex items-center justify-start md:justify-center gap-3 md:gap-10 flex-col md:flex-row">
           <div className="h-full w-[90%] md:w-[50%] flex flex-col justify-between">
-            <ChestPreview />
+            <ChestPreview
+              onSlotSelect={handleSlotSelect}
+              selectedSlot={selectedSlot}
+            />
             <div className="w-full h-[30%] md:h-[16%] flex justify-between pt-2">
               <div
                 className="w-[48%] h-full bg-type-1-button flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={handleImportClick}
               >
-                <span className="text-3xl">Import</span>
+                <span className="text-[22px] md:text-[24px]">Import</span>
               </div>
               <div
                 className="w-[48%] h-full bg-type-1-button flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={handleExportClick}
               >
-                <span className="text-3xl">Export</span>
+                <span className="text-[22px] md:text-[24px]">Export</span>
               </div>
             </div>
           </div>
           <div className="md:h-full w-[90%] md:w-[50%] flex flex-col justify-start md:justify-between">
             <TemplateBox />
-            <NBTEditor value={snbtContent} onChange={setSnbtContent} />
+            <NBTEditor value={currentItemSnbt} onChange={handleItemChange} />
           </div>
         </div>
       </main>

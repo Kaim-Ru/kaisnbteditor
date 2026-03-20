@@ -1,7 +1,12 @@
-import { useState } from 'react'
+interface ChestPreviewProps {
+  onSlotSelect?: (slot: number) => void
+  selectedSlot?: number | null
+}
 
-export default function ChestPreview() {
-  const [selected, setSelected] = useState<number | null>(null)
+export default function ChestPreview({
+  onSlotSelect,
+  selectedSlot,
+}: ChestPreviewProps) {
   return (
     <div className="w-full h-[80%] md:h-[75%] min-h-52 flex flex-col justify-between">
       <div className="w-full h-[15%] bg-type-1 flex items-center justify-center">
@@ -12,8 +17,8 @@ export default function ChestPreview() {
           {Array.from({ length: 27 }).map((_, i) => (
             <div
               key={i}
-              className={`w-full ${selected === i ? 'bg-type-2-selected' : 'bg-type-2-hover'}`}
-              onClick={() => setSelected(i)}
+              className={`w-full cursor-pointer ${selectedSlot === i ? 'bg-type-2-selected' : 'bg-type-2-hover'}`}
+              onClick={() => onSlotSelect?.(i)}
             ></div>
           ))}
         </div>

@@ -182,12 +182,17 @@ export default function NBTEditor({ value, onChange }: NBTEditorProps) {
     <div className="flex flex-col w-full my-4 h-100 md:h-[70%] md:mt-5 bg-type-1 md:my-0">
       <div className="flex items-center justify-between px-4 py-1">
         <div className="text-[20px] md:text-[24px]">NBTEditor</div>
-        <button
-          onClick={handleFormat}
-          className="px-3 py-1 text-sm transition-opacity bg-type-2 hover:opacity-80 rounded"
-        >
-          ✨ 整形
-        </button>
+        <div className="flex flex-row-reverse gap-3">
+          <button
+            onClick={handleFormat}
+            className="px-3 py-1 text-sm transition-opacity bg-type-1-button hover:opacity-80 font-bai-jamjuree"
+          >
+            Format
+          </button>
+          <button className="px-3 py-1 text-sm transition-opacity bg-type-1-button hover:opacity-80 font-bai-jamjuree">
+            Add Template
+          </button>
+        </div>
       </div>
       <div className="flex-1 p-3 overflow-hidden">
         <div ref={editorRef} className="w-full h-full"></div>
