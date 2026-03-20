@@ -1,5 +1,9 @@
 import * as NBT from 'nbtify'
-import { parse as parseSNBT } from '@ironm00n/nbt-ts'
+
+/**
+ * mcstructure内のアイテムの型定義
+ */
+export type McstructureItem = NBT.RootTag & { Slot?: NBT.Int8 }
 
 /**
  * mcstructure形式のNBTデータの型定義
@@ -8,16 +12,24 @@ interface McstructureNBT {
   structure: {
     palette: {
       default: {
+        block_palette: Array<{ name?: NBT.StringTag; [key: string]: unknown }>
         block_position_data: {
-          [key: string]: any
+          [key: string]: {
+            block_entity_data: {
+              Items: McstructureItem[]
+              [key: string]: unknown
+            }
+            [key: string]: unknown
+          }
         }
-        [key: string]: any
+        [key: string]: unknown
       }
-      [key: string]: any
+      [key: string]: unknown
     }
-    [key: string]: any
+    [key: string]: unknown
   }
-  [key: string]: any
+  data?: McstructureNBT
+  [key: string]: unknown
 }
 
 /**
@@ -25,54 +37,67 @@ interface McstructureNBT {
  * @param nbtData NBTデータ
  * @returns mcstructure形式であればtrue
  */
-function isMcstructureFormat(nbtData: any): nbtData is McstructureNBT {
+function isMcstructureFormat(nbtData: unknown): nbtData is McstructureNBT {
+  if (!nbtData || typeof nbtData !== 'object') {
+    return false
+  }
+
   // NBTData.dataからデータを取得
-  const data = nbtData.data
+  const data = 'data' in nbtData ? (nbtData as { data: unknown }).data : nbtData
 
   if (!data || typeof data !== 'object') {
     return false
   }
 
+  const dataObj = data as Record<string, unknown>
+
   if (
-    !('structure' in data) ||
-    !data.structure ||
-    typeof data.structure !== 'object'
+    !('structure' in dataObj) ||
+    !dataObj.structure ||
+    typeof dataObj.structure !== 'object'
   ) {
     return false
   }
 
+  const structure = dataObj.structure as Record<string, unknown>
+
   if (
-    !('palette' in data.structure) ||
-    !data.structure.palette ||
-    typeof data.structure.palette !== 'object'
+    !('palette' in structure) ||
+    !structure.palette ||
+    typeof structure.palette !== 'object'
   ) {
     return false
   }
 
+  const palette = structure.palette as Record<string, unknown>
+
   if (
-    !('default' in data.structure.palette) ||
-    !data.structure.palette.default ||
-    typeof data.structure.palette.default !== 'object'
+    !('default' in palette) ||
+    !palette.default ||
+    typeof palette.default !== 'object'
   ) {
     return false
   }
+
+  const paletteDefault = palette.default as Record<string, unknown>
 
   // block_paletteの検証
   if (
-    !('block_palette' in data.structure.palette.default) ||
-    !Array.isArray(data.structure.palette.default.block_palette) ||
-    data.structure.palette.default.block_palette.length === 0
+    !('block_palette' in paletteDefault) ||
+    !Array.isArray(paletteDefault.block_palette) ||
+    paletteDefault.block_palette.length === 0
   ) {
     return false
   }
 
   // block_paletteの中にminecraft:chestが含まれているか確認
-  const hasChest = data.structure.palette.default.block_palette.some(
-    (block: any) =>
+  const hasChest = paletteDefault.block_palette.some(
+    (block: unknown) =>
       block &&
       typeof block === 'object' &&
       'name' in block &&
-      block.name?.valueOf() === 'minecraft:chest'
+      (block as { name?: { valueOf(): string } }).name?.valueOf() ===
+        'minecraft:chest'
   )
 
   if (!hasChest) {
@@ -80,9 +105,9 @@ function isMcstructureFormat(nbtData: any): nbtData is McstructureNBT {
   }
 
   if (
-    !('block_position_data' in data.structure.palette.default) ||
-    !data.structure.palette.default.block_position_data ||
-    typeof data.structure.palette.default.block_position_data !== 'object'
+    !('block_position_data' in paletteDefault) ||
+    !paletteDefault.block_position_data ||
+    typeof paletteDefault.block_position_data !== 'object'
   ) {
     return false
   }
@@ -174,7 +199,9 @@ export function extractItemFromSNBT(
     const firstKey = Object.keys(blockPositionData)[0]
     const items = blockPositionData[firstKey].block_entity_data.Items
 
-    const item = items.find((item: any) => item.Slot?.valueOf() === slotNumber)
+    const item = items.find(
+      (item: McstructureItem) => item.Slot?.valueOf() === slotNumber
+    )
 
     if (!item) {
       return null
@@ -192,7 +219,9 @@ export function extractItemFromSNBT(
  * @param snbtText mcstructure全体のSNBT文字列
  * @returns スロット番号をキー、アイテムデータを値とするオブジェクト
  */
-export function extractAllItemsFromSNBT(snbtText: string): Record<number, any> {
+export function extractAllItemsFromSNBT(
+  snbtText: string
+): Record<number, McstructureItem> {
   try {
     const nbtData = NBT.parse(snbtText) as McstructureNBT
     const data = nbtData.data || nbtData
@@ -201,10 +230,10 @@ export function extractAllItemsFromSNBT(snbtText: string): Record<number, any> {
     const firstKey = Object.keys(blockPositionData)[0]
     const items = blockPositionData[firstKey].block_entity_data.Items
 
-    const itemMap: Record<number, any> = {}
+    const itemMap: Record<number, McstructureItem> = {}
 
     if (Array.isArray(items)) {
-      items.forEach((item: any) => {
+      items.forEach((item: McstructureItem) => {
         const slot = item.Slot?.valueOf()
         if (typeof slot === 'number') {
           itemMap[slot] = item
@@ -236,7 +265,7 @@ export function updateItemInSNBT(
   const nbtData = NBT.parse(snbtText) as McstructureNBT
 
   // nbtifyで直接パースする
-  const itemData = NBT.parse(itemSnbt)
+  const itemData = NBT.parse(itemSnbt) as McstructureItem
 
   console.log('Parsed itemData:', itemData)
 
@@ -255,7 +284,7 @@ export function updateItemInSNBT(
   const items = blockPositionData[firstKey].block_entity_data.Items
 
   const itemIndex = items.findIndex(
-    (item: any) => item.Slot?.valueOf() === slotNumber
+    (item: McstructureItem) => item.Slot?.valueOf() === slotNumber
   )
 
   console.log('itemIndex:', itemIndex, 'items length:', items.length)
