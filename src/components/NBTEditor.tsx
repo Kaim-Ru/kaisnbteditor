@@ -37,9 +37,14 @@ import { formatSNBT } from '../utils/nbt-converter'
 interface NBTEditorProps {
   value: string
   onChange: (value: string) => void
+  onAddTemplate?: () => void
 }
 
-export default function NBTEditor({ value, onChange }: NBTEditorProps) {
+export default function NBTEditor({
+  value,
+  onChange,
+  onAddTemplate,
+}: NBTEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
   const onChangeRef = useRef(onChange)
@@ -195,7 +200,10 @@ export default function NBTEditor({ value, onChange }: NBTEditorProps) {
           >
             Format
           </button>
-          <button className="px-3 py-1 text-sm transition-opacity bg-type-1-button hover:opacity-80 font-bai-jamjuree">
+          <button
+            onClick={onAddTemplate}
+            className="px-3 py-1 text-sm transition-opacity bg-type-1-button hover:opacity-80 font-bai-jamjuree"
+          >
             Add Template
           </button>
         </div>

@@ -11,7 +11,7 @@ interface ChestPreviewProps {
 /**
  * アイテムに応じて適切なプレビュー画像を取得
  */
-function getPreviewImage(item: any): string {
+export function getPreviewImage(item: any): string {
   // Blockプロパティがあるか確認
   if (item.Block) {
     return blockPreview

@@ -1,4 +1,15 @@
-export default function TemplateBox() {
+import { getPreviewImage } from './ChestPreview'
+import * as NBT from 'nbtify'
+
+interface TemplateBoxProps {
+  templates?: string[]
+  onTemplateSelect?: (template: string) => void
+}
+
+export default function TemplateBox({
+  templates = [],
+  onTemplateSelect,
+}: TemplateBoxProps) {
   return (
     <div className="w-full h-20 md:h-[20%] bg-type-1 flex flex-col min-h-22 md:min-h-28">
       <div className="relative flex items-center justify-center w-full h-8">
@@ -14,13 +25,43 @@ export default function TemplateBox() {
       </div>
       <div className="z-10 flex-1">
         <div className="grid grid-cols-8 w-full h-full gap-0.5 md:gap-1">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="p-1">
-              <div className="flex items-center justify-center w-full h-full">
-                <div className="aspect-square w-[min(100%,100vh)] bg-type-2-hover max-w-12 md:max-w-none"></div>
+          {Array.from({ length: 8 }).map((_, i) => {
+            const template = templates[i]
+            let previewItem = null
+
+            if (template) {
+              try {
+                previewItem = NBT.parse(template)
+              } catch (e) {
+                // Parse error, ignore and fall back to fallback image
+                previewItem = {}
+              }
+            }
+
+            return (
+              <div key={i} className="p-1">
+                <div
+                  className={`flex items-center justify-center w-full h-full relative ${template ? 'cursor-pointer hover:opacity-80' : ''}`}
+                  onClick={() =>
+                    template && onTemplateSelect && onTemplateSelect(template)
+                  }
+                  title={
+                    template ? 'クリックしてエディタに適用' : '空きスロット'
+                  }
+                >
+                  <div className="aspect-square w-[min(100%,100vh)] max-w-12 md:max-w-none bg-type-2-hover relative">
+                    {previewItem && (
+                      <img
+                        src={getPreviewImage(previewItem)}
+                        alt="template preview"
+                        className="absolute inset-0 w-full h-full p-1 pointer-events-none"
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>

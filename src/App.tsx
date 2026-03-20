@@ -60,6 +60,7 @@ function App() {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
   const [currentItemSnbt, setCurrentItemSnbt] = useState('')
   const [items, setItems] = useState<Record<number, any>>({})
+  const [templates, setTemplates] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // snbtContentが変更されたときにアイテムデータを更新
@@ -157,6 +158,13 @@ function App() {
     }
   }
 
+  // テンプレート追加処理
+  const handleAddTemplate = () => {
+    if (currentItemSnbt.trim()) {
+      setTemplates([...templates, currentItemSnbt])
+    }
+  }
+
   return (
     <>
       <input
@@ -197,8 +205,15 @@ function App() {
             </div>
           </div>
           <div className="md:h-full w-[90%] md:w-[50%] flex flex-col justify-start md:justify-between">
-            <TemplateBox />
-            <NBTEditor value={currentItemSnbt} onChange={handleItemChange} />
+            <TemplateBox
+              templates={templates}
+              onTemplateSelect={handleItemChange}
+            />
+            <NBTEditor
+              value={currentItemSnbt}
+              onChange={handleItemChange}
+              onAddTemplate={handleAddTemplate}
+            />
           </div>
         </div>
       </main>
