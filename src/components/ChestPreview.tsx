@@ -16,15 +16,15 @@ function getPreviewImage(item: any): string {
   if (item.Block) {
     return blockPreview
   }
-  
+
   // Nameフィールドを取得
   const name = item.Name?.valueOf?.() || item.Name || ''
-  
+
   // Ingotが含まれているか確認
   if (typeof name === 'string' && name.toLowerCase().includes('ingot')) {
     return ingotPreview
   }
-  
+
   // デフォルトはstick
   return stickPreview
 }
@@ -44,7 +44,7 @@ export default function ChestPreview({
           {Array.from({ length: 27 }).map((_, i) => {
             const item = items[i]
             const hasItem = !!item
-            
+
             return (
               <div
                 key={i}

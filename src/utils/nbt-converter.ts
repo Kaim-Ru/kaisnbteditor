@@ -191,9 +191,7 @@ export function extractItemFromSNBT(
  * @param snbtText mcstructure全体のSNBT文字列
  * @returns スロット番号をキー、アイテムデータを値とするオブジェクト
  */
-export function extractAllItemsFromSNBT(
-  snbtText: string
-): Record<number, any> {
+export function extractAllItemsFromSNBT(snbtText: string): Record<number, any> {
   try {
     const nbtData = NBT.parse(snbtText) as McstructureNBT
     const data = nbtData.data || nbtData
@@ -203,7 +201,7 @@ export function extractAllItemsFromSNBT(
     const items = blockPositionData[firstKey].block_entity_data.Items
 
     const itemMap: Record<number, any> = {}
-    
+
     if (Array.isArray(items)) {
       items.forEach((item: any) => {
         const slot = item.Slot?.valueOf()
