@@ -14,22 +14,18 @@ interface ChestPreviewProps {
  */
 export function getPreviewImage(
   item: any,
+  indexKey: string,
   customImages?: Record<string, string>
 ): string {
-  // kne_id または Name フィールドを取得
-  const kne_id = item.kne_id?.valueOf?.() || item.kne_id || ''
-  const name = item.Name?.valueOf?.() || item.Name || ''
+  const name = item?.Name?.valueOf?.() || item?.Name || ''
 
-  // カスタム画像があればそれを優先（kne_idを最優先）
-  if (customImages && kne_id && customImages[kne_id]) {
-    return customImages[kne_id]
-  }
-  if (customImages && name && customImages[name]) {
-    return customImages[name]
+  // カスタム画像があればそれを優先
+  if (customImages && customImages[indexKey]) {
+    return customImages[indexKey]
   }
 
   // Blockプロパティがあるか確認
-  if (item.Block) {
+  if (item?.Block) {
     return blockPreview
   }
 
@@ -67,7 +63,7 @@ export default function ChestPreview({
               >
                 {hasItem && (
                   <img
-                    src={getPreviewImage(item, customImages)}
+                    src={getPreviewImage(item, `slot_${i}`, customImages)}
                     alt="item preview"
                     className="absolute inset-0 w-full h-full p-1 pointer-events-none"
                   />

@@ -21,6 +21,11 @@ html {
   scrollbar-width: thin;
 }
 
+img {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: pixelated;
+}
+
 .bg-type-1 {
   @apply bg-primary-600 border border-primary-400 shadow-[0px_2px_10px_4px_rgba(0,0,0,0.25)];
 }

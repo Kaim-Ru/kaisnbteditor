@@ -10,6 +10,7 @@ import {
   extractAllItemsFromSNBT,
   updateItemInSNBT,
 } from './utils/nbt-converter'
+import { DEFAULT_CUSTOM_IMAGES, DEFAULT_TEMPLATES } from './defaultTemplates'
 
 const DEFAULT_SNBT = `{
     format_version: 1,
@@ -61,7 +62,11 @@ function App() {
   const [currentItemSnbt, setCurrentItemSnbt] = useState('')
   const [items, setItems] = useState<Record<number, any>>({})
   const [templates, setTemplates] = useState<string[]>([])
-  const [customImages, setCustomImages] = useState<Record<string, string>>({})
+  // デフォルトテンプレート（消去・エクスポート不可）
+  const [defaultTemplates, _] = useState<string[]>(DEFAULT_TEMPLATES)
+  const [customImages, setCustomImages] = useState<Record<string, string>>(
+    DEFAULT_CUSTOM_IMAGES
+  )
   const customImagesRef = useRef<Record<string, string>>(customImages)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const iconInputRef = useRef<HTMLInputElement>(null)
@@ -109,14 +114,7 @@ function App() {
     const file = event.target.files?.[0]
     if (!file || selectedSlot === null) return
 
-    const item = items[selectedSlot]
-    const key =
-      item?.kne_id?.valueOf?.() ||
-      item?.kne_id ||
-      item?.Name?.valueOf?.() ||
-      item?.Name ||
-      ''
-    if (!key) return
+    const key = `slot_${selectedSlot}`
 
     const url = URL.createObjectURL(file)
     setCustomImages((prev) => ({ ...prev, [key]: url }))
@@ -187,16 +185,74 @@ function App() {
     }
   }
 
+  // テンプレート選択からアイテムへの適用処理
+  const handleTemplateSelect = async (
+    template: string,
+    templateIndex: number
+  ) => {
+    if (selectedSlot === null) return
+
+    let modifiedTemplate = template
+    const templateKey = `template_${templateIndex}`
+    const slotKey = `slot_${selectedSlot}`
+
+    if (customImagesRef.current[templateKey]) {
+      setCustomImages((prev) => ({
+        ...prev,
+        [slotKey]: customImagesRef.current[templateKey],
+      }))
+    }
+
+    handleItemChange(modifiedTemplate)
+  }
+
   // テンプレート追加処理
   const handleAddTemplate = () => {
     if (currentItemSnbt.trim()) {
+      const newTemplateIndex = defaultTemplates.length + templates.length
+      const slotKey = `slot_${selectedSlot}`
+      const templateKey = `template_${newTemplateIndex}`
+
+      if (customImagesRef.current[slotKey]) {
+        setCustomImages((prev) => ({
+          ...prev,
+          [templateKey]: customImagesRef.current[slotKey],
+        }))
+      }
+
       setTemplates([...templates, currentItemSnbt])
     }
   }
 
   // テンプレート削除処理
   const handleDeleteTemplate = (index: number) => {
-    setTemplates(templates.filter((_, i) => i !== index))
+    setTemplates((prevTemplates) => {
+      const updatedTemplates = prevTemplates.filter((_, i) => i !== index)
+
+      setCustomImages((prevImgs) => {
+        const nextImgs = { ...prevImgs }
+        const actualIndex = defaultTemplates.length + index
+
+        // Remove the deleted one
+        delete nextImgs[`template_${actualIndex}`]
+
+        // Shift remaining items
+        for (let i = index + 1; i < prevTemplates.length; i++) {
+          const oldActual = defaultTemplates.length + i
+          const newActual = defaultTemplates.length + i - 1
+          if (nextImgs[`template_${oldActual}`]) {
+            nextImgs[`template_${newActual}`] =
+              nextImgs[`template_${oldActual}`]
+            delete nextImgs[`template_${oldActual}`]
+          }
+        }
+
+        customImagesRef.current = nextImgs
+        return nextImgs
+      })
+
+      return updatedTemplates
+    })
   }
 
   // ドラッグ＆ドロップでの機能追加 (.knezip)
@@ -230,57 +286,45 @@ function App() {
               zip.file(/.+\.(png|svg|jpg|jpeg|webp)$/i)[0]
 
             if (snbtContentTemp) {
-              let baseId = file.name.replace(/\.knezip$/i, '')
-              let finalId = baseId
+              setTemplates((prev) => {
+                const nextIndex = defaultTemplates.length + prev.length
+                const finalId = `template_${nextIndex}`
 
-              // 被りチェック
-              let counter = 1
-              while (customImagesRef.current[finalId]) {
-                finalId = `${baseId}_${counter}`
-                counter++
-              }
+                if (imgFile) {
+                  imgFile
+                    .async('uint8array')
+                    .then((uint8Array) => {
+                      let mimeType = 'image/png'
+                      const lowerName = imgFile.name.toLowerCase()
+                      if (lowerName.endsWith('.svg')) mimeType = 'image/svg+xml'
+                      else if (
+                        lowerName.endsWith('.jpg') ||
+                        lowerName.endsWith('.jpeg')
+                      )
+                        mimeType = 'image/jpeg'
+                      else if (lowerName.endsWith('.webp'))
+                        mimeType = 'image/webp'
 
-              // SNBT に kne_id を埋め込む
-              try {
-                const NBT = await import('nbtify')
-                const parsed = NBT.parse(snbtContentTemp)
-                if (typeof parsed === 'object' && parsed !== null) {
-                  // @ts-ignore
-                  parsed.kne_id = finalId
-                  snbtContentTemp = NBT.stringify(parsed)
+                      const blob = new Blob([new Uint8Array(uint8Array)], {
+                        type: mimeType,
+                      })
+                      const url = URL.createObjectURL(blob)
+                      setCustomImages((prevImgs) => {
+                        const nextImgs = { ...prevImgs, [finalId]: url }
+                        customImagesRef.current = nextImgs
+                        return nextImgs
+                      })
+                    })
+                    .catch((err) =>
+                      console.error(
+                        'Failed to parse dropped template image',
+                        err
+                      )
+                    )
                 }
-              } catch (err) {
-                console.error('Failed to inject kne_id', err)
-              }
 
-              setTemplates((prev) => [...prev, snbtContentTemp])
-
-              if (imgFile) {
-                try {
-                  const uint8Array = await imgFile.async('uint8array')
-                  let mimeType = 'image/png'
-                  const lowerName = imgFile.name.toLowerCase()
-                  if (lowerName.endsWith('.svg')) mimeType = 'image/svg+xml'
-                  else if (
-                    lowerName.endsWith('.jpg') ||
-                    lowerName.endsWith('.jpeg')
-                  )
-                    mimeType = 'image/jpeg'
-                  else if (lowerName.endsWith('.webp')) mimeType = 'image/webp'
-
-                  const blob = new Blob([new Uint8Array(uint8Array)], {
-                    type: mimeType,
-                  })
-                  const url = URL.createObjectURL(blob)
-                  setCustomImages((prev) => {
-                    const next = { ...prev, [finalId]: url }
-                    customImagesRef.current = next
-                    return next
-                  })
-                } catch (err) {
-                  console.error('Failed to parse dropped template image', err)
-                }
-              }
+                return [...prev, snbtContentTemp]
+              })
             }
           } catch (err) {
             console.error('Failed to load .kne.zip:', err)
@@ -347,7 +391,8 @@ function App() {
           <div className="md:h-full w-[90%] md:w-[50%] flex flex-col justify-start md:justify-between">
             <TemplateBox
               templates={templates}
-              onTemplateSelect={handleItemChange}
+              defaultTemplates={defaultTemplates}
+              onTemplateSelect={handleTemplateSelect}
               onTemplateDelete={handleDeleteTemplate}
               customImages={customImages}
             />

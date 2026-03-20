@@ -7,20 +7,26 @@ import exportIcon from '../assets/export.svg'
 
 interface TemplateBoxProps {
   templates?: string[]
-  onTemplateSelect?: (template: string) => void
+  defaultTemplates?: string[]
+  onTemplateSelect?: (template: string, index: number) => void
   onTemplateDelete?: (index: number) => void
   customImages?: Record<string, string>
 }
 
 export default function TemplateBox({
   templates = [],
+  defaultTemplates = [],
   onTemplateSelect,
   onTemplateDelete,
   customImages = {},
 }: TemplateBoxProps) {
+  const combinedTemplates = [...defaultTemplates, ...templates]
   const [currentPage, setCurrentPage] = useState(0)
   const itemsPerPage = 8
-  const maxPage = Math.max(0, Math.ceil(templates.length / itemsPerPage) - 1)
+  const maxPage = Math.max(
+    0,
+    Math.ceil(combinedTemplates.length / itemsPerPage) - 1
+  )
 
   useEffect(() => {
     if (currentPage > maxPage) {
@@ -105,7 +111,7 @@ export default function TemplateBox({
         <div className="text-[20px] md:text-[24px] relative top-1">
           Templates{' '}
           <span className="text-[14px]">
-            {templates.length > itemsPerPage &&
+            {combinedTemplates.length > itemsPerPage &&
               `(${currentPage + 1}/${maxPage + 1})`}
           </span>
         </div>
@@ -121,7 +127,8 @@ export default function TemplateBox({
         <div className="grid grid-cols-8 w-full h-full gap-0.5 md:gap-1">
           {Array.from({ length: itemsPerPage }).map((_, i) => {
             const actualIndex = currentPage * itemsPerPage + i
-            const template = templates[actualIndex]
+            const template = combinedTemplates[actualIndex]
+            const isDefault = actualIndex < defaultTemplates.length
             let previewItem = null
 
             if (template) {
@@ -138,7 +145,9 @@ export default function TemplateBox({
                 <div
                   className={`flex items-center justify-center w-full h-full relative group ${template ? 'cursor-pointer hover:opacity-80' : ''}`}
                   onClick={() =>
-                    template && onTemplateSelect && onTemplateSelect(template)
+                    template &&
+                    onTemplateSelect &&
+                    onTemplateSelect(template, actualIndex)
                   }
                   title={
                     template ? 'クリックしてエディタに適用' : '空きスロット'
@@ -148,44 +157,58 @@ export default function TemplateBox({
                     {previewItem && (
                       <>
                         <img
-                          src={getPreviewImage(previewItem, customImages)}
+                          src={getPreviewImage(
+                            previewItem,
+                            `template_${actualIndex}`,
+                            customImages
+                          )}
                           alt="template preview"
                           className="absolute inset-0 w-full h-full p-1 pointer-events-none"
                         />
-                        <button
-                          className="absolute left-0 bottom-0 items-center justify-center w-[45%] h-[45%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bg-blue-300 border border-blue-300 hover:bg-blue-300 opacity-40 z-10 group-hover:opacity-100"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleExport(
-                              template,
-                              previewItem,
-                              getPreviewImage(previewItem, customImages)
-                            )
-                          }}
-                          title="export"
-                        >
-                          <img
-                            src={exportIcon}
-                            alt="export"
-                            className="w-full h-full pointer-events-none"
-                          />
-                        </button>
-                        <button
-                          className="absolute right-0 items-center justify-center w-[45%] h-[45%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bottom-0 bg-red-300 border border-red-300 hover:bg-red-300 opacity-40 group-hover:opacity-100"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (onTemplateDelete) {
-                              onTemplateDelete(actualIndex)
-                            }
-                          }}
-                          title="delete"
-                        >
-                          <img
-                            src={trashcanIcon}
-                            alt="delete"
-                            className="w-full h-full pointer-events-none"
-                          />
-                        </button>
+                        {!isDefault && (
+                          <button
+                            className="absolute left-0 bottom-0 items-center justify-center w-[45%] h-[45%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bg-blue-300 border border-blue-300 hover:bg-blue-300 opacity-40 z-10 group-hover:opacity-100"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleExport(
+                                template,
+                                previewItem,
+                                getPreviewImage(
+                                  previewItem,
+                                  `template_${actualIndex}`,
+                                  customImages
+                                )
+                              )
+                            }}
+                            title="export"
+                          >
+                            <img
+                              src={exportIcon}
+                              alt="export"
+                              className="w-full h-full pointer-events-none"
+                            />
+                          </button>
+                        )}
+                        {!isDefault && (
+                          <button
+                            className="absolute right-0 items-center justify-center w-[45%] h-[45%] max-w-7 max-h-7 p-0.5 leading-none transition-colors bottom-0 bg-red-300 border border-red-300 hover:bg-red-300 opacity-40 group-hover:opacity-100"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (onTemplateDelete) {
+                                onTemplateDelete(
+                                  actualIndex - defaultTemplates.length
+                                )
+                              }
+                            }}
+                            title="delete"
+                          >
+                            <img
+                              src={trashcanIcon}
+                              alt="delete"
+                              className="w-full h-full pointer-events-none"
+                            />
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
