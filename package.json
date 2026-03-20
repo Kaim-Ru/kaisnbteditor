@@ -14,6 +14,16 @@
     "prepare": "husky install"
   },
   "dependencies": {
+    "@codemirror/autocomplete": "^6.20.1",
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/language": "^6.12.2",
+    "@codemirror/lint": "^6.9.5",
+    "@codemirror/search": "^6.6.0",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.40.0",
+    "@ironm00n/nbt-ts": "^1.4.1",
+    "@lezer/highlight": "^1.2.3",
+    "nbtify": "^2.2.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
   },
