@@ -1,4 +1,3 @@
-import './App.css'
 import logo from './assets/logo.svg'
 import ChestPreview from './components/ChestPreview'
 import TemplateBox from './components/TemplateBox'

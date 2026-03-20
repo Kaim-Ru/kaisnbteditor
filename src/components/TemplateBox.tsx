@@ -4,9 +4,6 @@ export default function TemplateBox() {
       <div className="text-[20px] md:text-[24px] mx-auto">Templates</div>
       <div className="flex-1">
         <div className="grid grid-cols-8 w-full h-full gap-0.5 md:gap-1">
-          {/* <div className="h-full p-1 aspect-square">s
-            <div className="w-full h-full bg-gray-500"></div>
-          </div> */}
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="p-1">
               <div className="flex items-center justify-center w-full h-full">
