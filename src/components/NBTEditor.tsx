@@ -42,12 +42,18 @@ interface NBTEditorProps {
 export default function NBTEditor({ value, onChange }: NBTEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const onChangeRef = useRef(onChange)
+
+  // onChangeの最新の値を保持
+  useEffect(() => {
+    onChangeRef.current = onChange
+  }, [onChange])
 
   // 整形ボタンのクリック処理
   const handleFormat = () => {
     try {
       const formatted = formatSNBT(value)
-      onChange(formatted)
+      onChangeRef.current(formatted)
     } catch (error) {
       console.error('Format error:', error)
       alert(
@@ -111,7 +117,7 @@ export default function NBTEditor({ value, onChange }: NBTEditorProps) {
         snbtLinter,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
-            onChange(update.state.doc.toString())
+            onChangeRef.current(update.state.doc.toString())
           }
         }),
         EditorView.theme({

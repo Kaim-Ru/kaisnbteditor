@@ -1,4 +1,5 @@
 import * as NBT from 'nbtify'
+import { parse as parseSNBT } from '@ironm00n/nbt-ts'
 
 /**
  * mcstructure形式のNBTデータの型定義
@@ -230,8 +231,22 @@ export function updateItemInSNBT(
   slotNumber: number,
   itemSnbt: string
 ): string {
+  console.log('updateItemInSNBT called:', { slotNumber, itemSnbt })
+  
   const nbtData = NBT.parse(snbtText) as McstructureNBT
+  
+  // nbtifyで直接パースする
   const itemData = NBT.parse(itemSnbt)
+  
+  console.log('Parsed itemData:', itemData)
+  
+  // Slotプロパティが正しく設定されていることを確認
+  if (!itemData.Slot || itemData.Slot.valueOf() !== slotNumber) {
+    itemData.Slot = new NBT.Int8(slotNumber)
+  }
+  
+  console.log('itemData after Slot assignment:', itemData)
+  
   // NBT.parseは通常のオブジェクトを返すので、.dataは不要
   const data = nbtData.data || nbtData
 
@@ -243,11 +258,15 @@ export function updateItemInSNBT(
     (item: any) => item.Slot?.valueOf() === slotNumber
   )
 
+  console.log('itemIndex:', itemIndex, 'items length:', items.length)
+
   if (itemIndex !== -1) {
     items[itemIndex] = itemData
   } else {
     items.push(itemData)
   }
+  
+  console.log('Items after update:', items)
 
   // SNBTに変換して返す
   return NBT.stringify(data, { space: 2 })
