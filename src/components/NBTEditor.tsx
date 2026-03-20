@@ -38,12 +38,14 @@ interface NBTEditorProps {
   value: string
   onChange: (value: string) => void
   onAddTemplate?: () => void
+  onChangeIcon?: () => void
 }
 
 export default function NBTEditor({
   value,
   onChange,
   onAddTemplate,
+  onChangeIcon,
 }: NBTEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
@@ -191,7 +193,7 @@ export default function NBTEditor({
 
   return (
     <div className="flex flex-col w-full my-4 h-100 md:h-[70%] md:mt-5 bg-type-1 md:my-0">
-      <div className="flex items-center justify-between px-4 py-1">
+      <div className="flex items-center justify-between gap-2 px-4 py-1">
         <div className="text-[20px] md:text-[24px]">NBTEditor</div>
         <div className="flex flex-row-reverse gap-3">
           <button
@@ -204,8 +206,16 @@ export default function NBTEditor({
             onClick={onAddTemplate}
             className="px-3 py-1 text-sm transition-opacity bg-type-1-button hover:opacity-80 font-bai-jamjuree"
           >
-            Add Template
+            T
           </button>
+          {onChangeIcon && (
+            <button
+              onClick={onChangeIcon}
+              className="px-3 py-1 text-sm transition-opacity bg-type-1-button hover:opacity-80 font-bai-jamjuree"
+            >
+              I
+            </button>
+          )}
         </div>
       </div>
       <div className="flex-1 p-3 overflow-hidden">

@@ -6,19 +6,28 @@ interface ChestPreviewProps {
   onSlotSelect?: (slot: number) => void
   selectedSlot?: number | null
   items?: Record<number, any>
+  customImages?: Record<string, string>
 }
 
 /**
  * アイテムに応じて適切なプレビュー画像を取得
  */
-export function getPreviewImage(item: any): string {
+export function getPreviewImage(
+  item: any,
+  customImages?: Record<string, string>
+): string {
+  // Nameフィールドを取得
+  const name = item.Name?.valueOf?.() || item.Name || ''
+
+  // カスタム画像があればそれを優先
+  if (customImages && name && customImages[name]) {
+    return customImages[name]
+  }
+
   // Blockプロパティがあるか確認
   if (item.Block) {
     return blockPreview
   }
-
-  // Nameフィールドを取得
-  const name = item.Name?.valueOf?.() || item.Name || ''
 
   // Ingotが含まれているか確認
   if (typeof name === 'string' && name.toLowerCase().includes('ingot')) {
@@ -33,6 +42,7 @@ export default function ChestPreview({
   onSlotSelect,
   selectedSlot,
   items = {},
+  customImages = {},
 }: ChestPreviewProps) {
   return (
     <div className="w-full h-[80%] md:h-[75%] min-h-52 flex flex-col justify-between">
@@ -53,7 +63,7 @@ export default function ChestPreview({
               >
                 {hasItem && (
                   <img
-                    src={getPreviewImage(item)}
+                    src={getPreviewImage(item, customImages)}
                     alt="item preview"
                     className="absolute inset-0 w-full h-full p-1 pointer-events-none"
                   />

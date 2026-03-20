@@ -61,7 +61,9 @@ function App() {
   const [currentItemSnbt, setCurrentItemSnbt] = useState('')
   const [items, setItems] = useState<Record<number, any>>({})
   const [templates, setTemplates] = useState<string[]>([])
+  const [customImages, setCustomImages] = useState<Record<string, string>>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const iconInputRef = useRef<HTMLInputElement>(null)
 
   // snbtContentが変更されたときにアイテムデータを更新
   useEffect(() => {
@@ -95,6 +97,23 @@ function App() {
   // Importボタンのクリック処理
   const handleImportClick = () => {
     fileInputRef.current?.click()
+  }
+
+  // アイコン画像選択時の処理
+  const handleIconChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || selectedSlot === null) return
+
+    const item = items[selectedSlot]
+    const name = item?.Name?.valueOf?.() || item?.Name || ''
+    if (!name) return
+
+    const url = URL.createObjectURL(file)
+    setCustomImages((prev) => ({ ...prev, [name]: url }))
+
+    if (iconInputRef.current) {
+      iconInputRef.current.value = ''
+    }
   }
 
   // Exportボタンのクリック処理
@@ -165,6 +184,11 @@ function App() {
     }
   }
 
+  // テンプレート削除処理
+  const handleDeleteTemplate = (index: number) => {
+    setTemplates(templates.filter((_, i) => i !== index))
+  }
+
   return (
     <>
       <input
@@ -173,6 +197,13 @@ function App() {
         accept=".mcstructure,.nbt"
         style={{ display: 'none' }}
         onChange={handleFileChange}
+      />
+      <input
+        ref={iconInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleIconChange}
       />
       <header className="flex items-center justify-start flex-none w-full h-10 bg-type-1">
         <img src={logo} alt="Logo" className="inline w-8 mx-1" />
@@ -188,6 +219,7 @@ function App() {
               onSlotSelect={handleSlotSelect}
               selectedSlot={selectedSlot}
               items={items}
+              customImages={customImages}
             />
             <div className="w-full h-[30%] md:h-[16%] flex justify-between pt-2">
               <div
@@ -208,11 +240,18 @@ function App() {
             <TemplateBox
               templates={templates}
               onTemplateSelect={handleItemChange}
+              onTemplateDelete={handleDeleteTemplate}
+              customImages={customImages}
             />
             <NBTEditor
               value={currentItemSnbt}
               onChange={handleItemChange}
               onAddTemplate={handleAddTemplate}
+              onChangeIcon={
+                selectedSlot !== null && items[selectedSlot]
+                  ? () => iconInputRef.current?.click()
+                  : undefined
+              }
             />
           </div>
         </div>
