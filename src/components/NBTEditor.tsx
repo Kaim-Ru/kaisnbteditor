@@ -32,6 +32,7 @@ import { linter, lintKeymap } from '@codemirror/lint'
 import type { Diagnostic } from '@codemirror/lint'
 import { snbt } from '../utils/snbt-language'
 import { validateSNBT } from '../utils/snbt-parser'
+import { formatSNBT } from '../utils/nbt-converter'
 
 interface NBTEditorProps {
   value: string
@@ -41,6 +42,19 @@ interface NBTEditorProps {
 export default function NBTEditor({ value, onChange }: NBTEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView | null>(null)
+
+  // 整形ボタンのクリック処理
+  const handleFormat = () => {
+    try {
+      const formatted = formatSNBT(value)
+      onChange(formatted)
+    } catch (error) {
+      console.error('Format error:', error)
+      alert(
+        `整形に失敗しました: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
 
   useEffect(() => {
     if (!editorRef.current) return
@@ -166,7 +180,15 @@ export default function NBTEditor({ value, onChange }: NBTEditorProps) {
 
   return (
     <div className="flex flex-col w-full my-4 h-100 md:h-[70%] md:mt-5 bg-type-1 md:my-0">
-      <div className="mx-auto text-[20px] md:text-[24px]">NBTEditor</div>
+      <div className="flex items-center justify-between px-4 py-1">
+        <div className="text-[20px] md:text-[24px]">NBTEditor</div>
+        <button
+          onClick={handleFormat}
+          className="px-3 py-1 text-sm transition-opacity bg-type-2 hover:opacity-80 rounded"
+        >
+          ✨ 整形
+        </button>
+      </div>
       <div className="flex-1 p-3 overflow-hidden">
         <div ref={editorRef} className="w-full h-full"></div>
       </div>
