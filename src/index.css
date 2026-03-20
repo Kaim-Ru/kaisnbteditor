@@ -17,6 +17,8 @@
 
 html {
   @apply bg-primary-800;
+  scrollbar-color: #704e7d #422742;
+  scrollbar-width: thin;
 }
 
 .bg-type-1 {

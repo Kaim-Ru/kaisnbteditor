@@ -165,7 +165,7 @@ export default function NBTEditor({ value, onChange }: NBTEditorProps) {
   }, [value])
 
   return (
-    <div className="flex flex-col w-full my-4 h-100 md:h-full md:mt-5 bg-type-1 md:my-0">
+    <div className="flex flex-col w-full my-4 h-100 md:h-[70%] md:mt-5 bg-type-1 md:my-0">
       <div className="mx-auto text-[20px] md:text-[24px]">NBTEditor</div>
       <div className="flex-1 p-3 overflow-hidden">
         <div ref={editorRef} className="w-full h-full"></div>

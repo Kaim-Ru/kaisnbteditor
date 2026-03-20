@@ -54,7 +54,9 @@ function App() {
       const uint8Array = await snbtToMcstructure(snbtContent)
 
       // ダウンロード
-      const blob = new Blob([uint8Array], { type: 'application/octet-stream' })
+      const blob = new Blob([new Uint8Array(uint8Array)], {
+        type: 'application/octet-stream',
+      })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
