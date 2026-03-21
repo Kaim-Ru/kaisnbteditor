@@ -10,7 +10,12 @@ import {
   extractAllItemsFromSNBT,
   updateItemInSNBT,
 } from './utils/nbt-converter'
-import { DEFAULT_CUSTOM_IMAGES, DEFAULT_TEMPLATES } from './defaultTemplates'
+import { DEFAULT_TEMPLATES, type TemplateData } from './defaultTemplates'
+import {
+  getCustomTemplates,
+  addCustomTemplate,
+  deleteCustomTemplate,
+} from './utils/idb'
 
 const DEFAULT_SNBT = `{
     format_version: 1,
@@ -61,15 +66,16 @@ function App() {
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
   const [currentItemSnbt, setCurrentItemSnbt] = useState('')
   const [items, setItems] = useState<Record<number, any>>({})
-  const [templates, setTemplates] = useState<string[]>([])
-  // デフォルトテンプレート（消去・エクスポート不可）
-  const [defaultTemplates, _] = useState<string[]>(DEFAULT_TEMPLATES)
-  const [customImages, setCustomImages] = useState<Record<string, string>>(
-    DEFAULT_CUSTOM_IMAGES
-  )
+  const [customTemplates, setCustomTemplates] = useState<TemplateData[]>([])
+  const [customImages, setCustomImages] = useState<Record<string, string>>({})
   const customImagesRef = useRef<Record<string, string>>(customImages)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const iconInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    // IndexedDBからカスタムテンプレートを読み込む
+    getCustomTemplates().then(setCustomTemplates)
+  }, [])
 
   useEffect(() => {
     customImagesRef.current = customImages
@@ -186,20 +192,16 @@ function App() {
   }
 
   // テンプレート選択からアイテムへの適用処理
-  const handleTemplateSelect = async (
-    template: string,
-    templateIndex: number
-  ) => {
+  const handleTemplateSelect = async (template: TemplateData) => {
     if (selectedSlot === null) return
 
-    let modifiedTemplate = template
-    const templateKey = `template_${templateIndex}`
+    let modifiedTemplate = template.snbt
     const slotKey = `slot_${selectedSlot}`
 
-    if (customImagesRef.current[templateKey]) {
+    if (template.image) {
       setCustomImages((prev) => ({
         ...prev,
-        [slotKey]: customImagesRef.current[templateKey],
+        [slotKey]: template.image!,
       }))
     }
 
@@ -207,52 +209,25 @@ function App() {
   }
 
   // テンプレート追加処理
-  const handleAddTemplate = () => {
+  const handleAddTemplate = async () => {
     if (currentItemSnbt.trim()) {
-      const newTemplateIndex = defaultTemplates.length + templates.length
       const slotKey = `slot_${selectedSlot}`
-      const templateKey = `template_${newTemplateIndex}`
-
-      if (customImagesRef.current[slotKey]) {
-        setCustomImages((prev) => ({
-          ...prev,
-          [templateKey]: customImagesRef.current[slotKey],
-        }))
+      const newTemplate: TemplateData = {
+        id: crypto.randomUUID(),
+        snbt: currentItemSnbt,
+        image: customImagesRef.current[slotKey],
+        isDefault: false,
       }
 
-      setTemplates([...templates, currentItemSnbt])
+      await addCustomTemplate(newTemplate)
+      setCustomTemplates((prev) => [...prev, newTemplate])
     }
   }
 
   // テンプレート削除処理
-  const handleDeleteTemplate = (index: number) => {
-    setTemplates((prevTemplates) => {
-      const updatedTemplates = prevTemplates.filter((_, i) => i !== index)
-
-      setCustomImages((prevImgs) => {
-        const nextImgs = { ...prevImgs }
-        const actualIndex = defaultTemplates.length + index
-
-        // Remove the deleted one
-        delete nextImgs[`template_${actualIndex}`]
-
-        // Shift remaining items
-        for (let i = index + 1; i < prevTemplates.length; i++) {
-          const oldActual = defaultTemplates.length + i
-          const newActual = defaultTemplates.length + i - 1
-          if (nextImgs[`template_${oldActual}`]) {
-            nextImgs[`template_${newActual}`] =
-              nextImgs[`template_${oldActual}`]
-            delete nextImgs[`template_${oldActual}`]
-          }
-        }
-
-        customImagesRef.current = nextImgs
-        return nextImgs
-      })
-
-      return updatedTemplates
-    })
+  const handleDeleteTemplate = async (templateId: string) => {
+    await deleteCustomTemplate(templateId)
+    setCustomTemplates((prev) => prev.filter((t) => t.id !== templateId))
   }
 
   // ドラッグ＆ドロップでの機能追加 (.knezip)
@@ -286,45 +261,38 @@ function App() {
               zip.file(/.+\.(png|svg|jpg|jpeg|webp)$/i)[0]
 
             if (snbtContentTemp) {
-              setTemplates((prev) => {
-                const nextIndex = defaultTemplates.length + prev.length
-                const finalId = `template_${nextIndex}`
+              const newTemplate: TemplateData = {
+                id: crypto.randomUUID(),
+                snbt: snbtContentTemp,
+                isDefault: false,
+              }
 
-                if (imgFile) {
-                  imgFile
-                    .async('uint8array')
-                    .then((uint8Array) => {
-                      let mimeType = 'image/png'
-                      const lowerName = imgFile.name.toLowerCase()
-                      if (lowerName.endsWith('.svg')) mimeType = 'image/svg+xml'
-                      else if (
-                        lowerName.endsWith('.jpg') ||
-                        lowerName.endsWith('.jpeg')
-                      )
-                        mimeType = 'image/jpeg'
-                      else if (lowerName.endsWith('.webp'))
-                        mimeType = 'image/webp'
+              if (imgFile) {
+                const uint8Array = await imgFile.async('uint8array')
+                let mimeType = 'image/png'
+                const lowerName = imgFile.name.toLowerCase()
+                if (lowerName.endsWith('.svg')) mimeType = 'image/svg+xml'
+                else if (
+                  lowerName.endsWith('.jpg') ||
+                  lowerName.endsWith('.jpeg')
+                )
+                  mimeType = 'image/jpeg'
+                else if (lowerName.endsWith('.webp')) mimeType = 'image/webp'
 
-                      const blob = new Blob([new Uint8Array(uint8Array)], {
-                        type: mimeType,
-                      })
-                      const url = URL.createObjectURL(blob)
-                      setCustomImages((prevImgs) => {
-                        const nextImgs = { ...prevImgs, [finalId]: url }
-                        customImagesRef.current = nextImgs
-                        return nextImgs
-                      })
-                    })
-                    .catch((err) =>
-                      console.error(
-                        'Failed to parse dropped template image',
-                        err
-                      )
-                    )
+                const blob = new Blob([new Uint8Array(uint8Array)], {
+                  type: mimeType,
+                })
+                const reader = new FileReader()
+                reader.readAsDataURL(blob)
+                reader.onloadend = async () => {
+                  newTemplate.image = reader.result as string
+                  await addCustomTemplate(newTemplate)
+                  setCustomTemplates((prev) => [...prev, newTemplate])
                 }
-
-                return [...prev, snbtContentTemp]
-              })
+              } else {
+                await addCustomTemplate(newTemplate)
+                setCustomTemplates((prev) => [...prev, newTemplate])
+              }
             }
           } catch (err) {
             console.error('Failed to load .kne.zip:', err)
@@ -390,11 +358,9 @@ function App() {
           </div>
           <div className="md:h-full w-[90%] md:w-[50%] flex flex-col justify-start md:justify-between">
             <TemplateBox
-              templates={templates}
-              defaultTemplates={defaultTemplates}
+              templates={[...DEFAULT_TEMPLATES, ...customTemplates]}
               onTemplateSelect={handleTemplateSelect}
               onTemplateDelete={handleDeleteTemplate}
-              customImages={customImages}
             />
             <NBTEditor
               value={currentItemSnbt}

@@ -4,29 +4,22 @@ import * as NBT from 'nbtify'
 import JSZip from 'jszip'
 import trashcanIcon from '../assets/trashcan.svg'
 import exportIcon from '../assets/export.svg'
+import type { TemplateData } from '../defaultTemplates'
 
 interface TemplateBoxProps {
-  templates?: string[]
-  defaultTemplates?: string[]
-  onTemplateSelect?: (template: string, index: number) => void
-  onTemplateDelete?: (index: number) => void
-  customImages?: Record<string, string>
+  templates?: TemplateData[]
+  onTemplateSelect?: (template: TemplateData) => void
+  onTemplateDelete?: (templateId: string) => void
 }
 
 export default function TemplateBox({
   templates = [],
-  defaultTemplates = [],
   onTemplateSelect,
   onTemplateDelete,
-  customImages = {},
 }: TemplateBoxProps) {
-  const combinedTemplates = [...defaultTemplates, ...templates]
   const [currentPage, setCurrentPage] = useState(0)
   const itemsPerPage = 8
-  const maxPage = Math.max(
-    0,
-    Math.ceil(combinedTemplates.length / itemsPerPage) - 1
-  )
+  const maxPage = Math.max(0, Math.ceil(templates.length / itemsPerPage) - 1)
 
   useEffect(() => {
     if (currentPage > maxPage) {
@@ -111,7 +104,7 @@ export default function TemplateBox({
         <div className="text-[20px] md:text-[24px] relative top-1">
           Templates{' '}
           <span className="text-[14px]">
-            {combinedTemplates.length > itemsPerPage &&
+            {templates.length > itemsPerPage &&
               `(${currentPage + 1}/${maxPage + 1})`}
           </span>
         </div>
@@ -127,13 +120,13 @@ export default function TemplateBox({
         <div className="grid grid-cols-8 w-full h-full gap-0.5 md:gap-1">
           {Array.from({ length: itemsPerPage }).map((_, i) => {
             const actualIndex = currentPage * itemsPerPage + i
-            const template = combinedTemplates[actualIndex]
-            const isDefault = actualIndex < defaultTemplates.length
+            const template = templates[actualIndex]
+            const isDefault = template?.isDefault ?? false
             let previewItem = null
 
             if (template) {
               try {
-                previewItem = NBT.parse(template)
+                previewItem = NBT.parse(template.snbt)
               } catch (e) {
                 // Parse error, ignore and fall back to fallback image
                 previewItem = {}
@@ -145,23 +138,17 @@ export default function TemplateBox({
                 <div
                   className={`flex items-center justify-center w-full h-full relative group ${template ? 'cursor-pointer hover:opacity-80' : ''}`}
                   onClick={() =>
-                    template &&
-                    onTemplateSelect &&
-                    onTemplateSelect(template, actualIndex)
+                    template && onTemplateSelect && onTemplateSelect(template)
                   }
-                  title={
-                    template ? 'クリックしてエディタに適用' : '空きスロット'
-                  }
+                  title={template ? 'Click to apply' : 'Empty Slot'}
                 >
                   <div className="aspect-square w-[min(100%,100vh)] max-w-12 md:max-w-none bg-type-2-hover relative">
                     {previewItem && (
                       <>
                         <img
-                          src={getPreviewImage(
-                            previewItem,
-                            `template_${actualIndex}`,
-                            customImages
-                          )}
+                          src={
+                            template.image || getPreviewImage(previewItem, '')
+                          }
                           alt="template preview"
                           className="absolute inset-0 w-full h-full p-1 pointer-events-none"
                         />
@@ -171,13 +158,9 @@ export default function TemplateBox({
                             onClick={(e) => {
                               e.stopPropagation()
                               handleExport(
-                                template,
+                                template.snbt,
                                 previewItem,
-                                getPreviewImage(
-                                  previewItem,
-                                  `template_${actualIndex}`,
-                                  customImages
-                                )
+                                template.image || ''
                               )
                             }}
                             title="export"
@@ -195,9 +178,7 @@ export default function TemplateBox({
                             onClick={(e) => {
                               e.stopPropagation()
                               if (onTemplateDelete) {
-                                onTemplateDelete(
-                                  actualIndex - defaultTemplates.length
-                                )
+                                onTemplateDelete(template.id)
                               }
                             }}
                             title="delete"

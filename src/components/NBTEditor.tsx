@@ -33,6 +33,8 @@ import type { Diagnostic } from '@codemirror/lint'
 import { snbt } from '../utils/snbt-language'
 import { validateSNBT } from '../utils/snbt-parser'
 import { formatSNBT } from '../utils/nbt-converter'
+import saveIcon from '../assets/save.svg'
+import pictureIcon from '../assets/picture.svg'
 
 interface NBTEditorProps {
   value: string
@@ -204,16 +206,40 @@ export default function NBTEditor({
           </button>
           <button
             onClick={onAddTemplate}
-            className="px-3 py-1 text-sm transition-opacity bg-type-1-button hover:opacity-80 font-bai-jamjuree"
+            className="p-1 transition-opacity w-7 h-7 bg-type-1-button hover:opacity-80"
           >
-            T
+            <div
+              className="w-full h-full pointer-events-none bg-primary-300"
+              style={{
+                maskImage: `url("${saveIcon}")`,
+                WebkitMaskImage: `url("${saveIcon}")`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+              }}
+            />
           </button>
           {onChangeIcon && (
             <button
               onClick={onChangeIcon}
-              className="px-3 py-1 text-sm transition-opacity bg-type-1-button hover:opacity-80 font-bai-jamjuree"
+              className="p-1 transition-opacity w-7 h-7 bg-type-1-button hover:opacity-80"
             >
-              I
+              <div
+                className="w-full h-full pointer-events-none bg-primary-300"
+                style={{
+                  maskImage: `url("${pictureIcon}")`,
+                  WebkitMaskImage: `url("${pictureIcon}")`,
+                  maskSize: 'contain',
+                  WebkitMaskSize: 'contain',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  WebkitMaskPosition: 'center',
+                }}
+              />
             </button>
           )}
         </div>
